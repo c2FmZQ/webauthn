@@ -21,9 +21,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Package ssh implements OpenSSH FIDO2/WebAuthn ECDSA P-256 security keys
-// (sk-ecdsa-sha2-nistp256@openssh.com) and browser WebAuthn SSH signatures
-// (webauthn-sk-ecdsa-sha2-nistp256@openssh.com) per OpenSSH PROTOCOL.u2f.
 package ssh
 
 import (
@@ -145,6 +142,8 @@ func (k *Key) RPID() []byte {
 }
 
 // Unmarshal parses a PEM-encoded WEBAUTHN KEY or WEBAUTHN ENCRYPTED KEY block.
+// If the key is encrypted, rp is called with a prompt string containing name to
+// obtain the passphrase.
 func Unmarshal(priv []byte, name string, rp func(string) (string, error)) (*Key, error) {
 	if !bytes.HasPrefix(priv, []byte("-----BEGIN WEBAUTHN ")) {
 		return nil, errors.New("unexpected key format")
@@ -252,9 +251,10 @@ func UnmarshalPublic(pub []byte) (*Key, error) {
 	}, nil
 }
 
-// MarshalPrivate serializes the key into a WEBAUTHN KEY (unencrypted) or
-// WEBAUTHN ENCRYPTED KEY (AES-256-GCM encrypted with PBKDF2-HMAC-SHA256) PEM
-// block.
+// MarshalPrivate serializes the key into a PEM block. When passphrase is empty,
+// it produces an unencrypted WEBAUTHN KEY block; otherwise, it encrypts the
+// credential ID using AES-256-GCM with a PBKDF2-HMAC-SHA256 key derived from
+// passphrase and produces a WEBAUTHN ENCRYPTED KEY block.
 func (k *Key) MarshalPrivate(passphrase string) (*pem.Block, error) {
 	pubBytes := k.Marshal()
 	if passphrase == "" {

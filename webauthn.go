@@ -21,8 +21,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Package webauthn implements the server and client primitives of the W3C
-// WebAuthn specification.
 package webauthn
 
 import (
@@ -164,16 +162,22 @@ func (b *Bytes) UnmarshalJSON(data []byte) error {
 	}
 }
 
-// RelyingPartyEntity describes the Relying Party in AttestationOptions.
+// RelyingPartyEntity describes the Relying Party in [AttestationOptions].
 type RelyingPartyEntity struct {
+	// Name is a human-palatable name for the Relying Party (e.g. "Example Corp").
 	Name string `json:"name"`
-	ID   string `json:"id,omitempty"`
+	// ID is the Relying Party Identifier (e.g. "example.com"). If omitted, the
+	// browser defaults it to the effective domain of the current origin.
+	ID string `json:"id,omitempty"`
 }
 
-// UserEntity describes the user account in AttestationOptions.
+// UserEntity describes the user account in [AttestationOptions].
 type UserEntity struct {
-	ID          Bytes  `json:"id"`
-	Name        string `json:"name"`
+	// ID is an opaque, user-specific byte sequence (1-64 bytes).
+	ID Bytes `json:"id"`
+	// Name is a human-palatable identifier for the user account (e.g. "alice@example.com").
+	Name string `json:"name"`
+	// DisplayName is a human-palatable name for the user account (e.g. "Alice").
 	DisplayName string `json:"displayName"`
 }
 
@@ -312,13 +316,21 @@ type CredentialID struct {
 // WebAuthn Level 3 RegistrationResponseJSON structure (with a nested "response"
 // object) and a flat JSON object structure.
 type AttestationResponse struct {
-	ID                      string   `json:"id,omitempty"`
-	RawID                   Bytes    `json:"rawId,omitempty"`
-	Type                    string   `json:"type,omitempty"`
-	AuthenticatorAttachment string   `json:"authenticatorAttachment,omitempty"`
-	ClientDataJSON          Bytes    `json:"clientDataJSON"`
-	AttestationObject       Bytes    `json:"attestationObject"`
-	Transports              []string `json:"transports,omitempty"`
+	// ID is the base64url-encoded credential ID.
+	ID string `json:"id,omitempty"`
+	// RawID is the raw binary credential ID.
+	RawID Bytes `json:"rawId,omitempty"`
+	// Type is the credential type ("public-key").
+	Type string `json:"type,omitempty"`
+	// AuthenticatorAttachment reports how the authenticator is attached
+	// ("platform" or "cross-platform").
+	AuthenticatorAttachment string `json:"authenticatorAttachment,omitempty"`
+	// ClientDataJSON is the serialized JSON client data passed to the authenticator.
+	ClientDataJSON Bytes `json:"clientDataJSON"`
+	// AttestationObject is the CBOR-encoded attestation object returned by the authenticator.
+	AttestationObject Bytes `json:"attestationObject"`
+	// Transports lists the authenticator transports (e.g. "internal", "usb", "nfc", "ble", "hybrid").
+	Transports []string `json:"transports,omitempty"`
 }
 
 // UnmarshalJSON unmarshals an AttestationResponse from either a W3C Level 3
@@ -371,14 +383,23 @@ func (r *AttestationResponse) UnmarshalJSON(data []byte) error {
 // WebAuthn Level 3 AuthenticationResponseJSON structure (with a nested
 // "response" object) and a flat JSON object structure.
 type AssertionResponse struct {
-	ID                      string `json:"id,omitempty"`
-	RawID                   Bytes  `json:"rawId,omitempty"`
-	Type                    string `json:"type,omitempty"`
+	// ID is the base64url-encoded credential ID.
+	ID string `json:"id,omitempty"`
+	// RawID is the raw binary credential ID.
+	RawID Bytes `json:"rawId,omitempty"`
+	// Type is the credential type ("public-key").
+	Type string `json:"type,omitempty"`
+	// AuthenticatorAttachment reports how the authenticator is attached
+	// ("platform" or "cross-platform").
 	AuthenticatorAttachment string `json:"authenticatorAttachment,omitempty"`
-	ClientDataJSON          Bytes  `json:"clientDataJSON"`
-	AuthenticatorData       Bytes  `json:"authenticatorData"`
-	Signature               Bytes  `json:"signature"`
-	UserHandle              Bytes  `json:"userHandle,omitempty"`
+	// ClientDataJSON is the serialized JSON client data passed to the authenticator.
+	ClientDataJSON Bytes `json:"clientDataJSON"`
+	// AuthenticatorData is the raw authenticator data returned by the authenticator.
+	AuthenticatorData Bytes `json:"authenticatorData"`
+	// Signature is the raw signature over authData || SHA-256(clientDataJSON).
+	Signature Bytes `json:"signature"`
+	// UserHandle is the user handle returned for discoverable credentials, if any.
+	UserHandle Bytes `json:"userHandle,omitempty"`
 }
 
 // UnmarshalJSON unmarshals an AssertionResponse from either a W3C Level 3
@@ -456,18 +477,26 @@ func reconcileCredentialID(id string, rawID Bytes) (string, Bytes, error) {
 // TokenBinding represents the tokenBinding member of CollectedClientData.
 // https://w3c.github.io/webauthn/#dom-collectedclientdata-tokenbinding
 type TokenBinding struct {
+	// Status is "present" or "supported".
 	Status string `json:"status"`
-	ID     string `json:"id,omitempty"`
+	// ID is the base64url-encoded token binding ID when Status is "present".
+	ID string `json:"id,omitempty"`
 }
 
 // ClientData is a decoded CollectedClientData (clientDataJSON) object.
 // https://w3c.github.io/webauthn/#dictdef-collectedclientdata
 type ClientData struct {
-	Type         string        `json:"type"`
-	Challenge    string        `json:"challenge"`
-	Origin       string        `json:"origin"`
-	CrossOrigin  bool          `json:"crossOrigin,omitempty"`
-	TopOrigin    string        `json:"topOrigin,omitempty"`
+	// Type is "webauthn.create" or "webauthn.get".
+	Type string `json:"type"`
+	// Challenge is the unpadded base64url-encoded challenge.
+	Challenge string `json:"challenge"`
+	// Origin is the serialized origin of the caller.
+	Origin string `json:"origin"`
+	// CrossOrigin reports whether the ceremony occurred in a cross-origin iframe.
+	CrossOrigin bool `json:"crossOrigin,omitempty"`
+	// TopOrigin is the top-level origin when CrossOrigin is true.
+	TopOrigin string `json:"topOrigin,omitempty"`
+	// TokenBinding is the optional TLS token binding state.
 	TokenBinding *TokenBinding `json:"tokenBinding,omitempty"`
 }
 
@@ -552,21 +581,35 @@ type VerifyAttestationOptions struct {
 }
 
 // VerifiedCredential contains the validated credential information resulting
-// from a successful registration ceremony (VerifyAttestation).
+// from a successful registration ceremony ([VerifyAttestation]).
 type VerifiedCredential struct {
-	ID             Bytes
-	PublicKey      crypto.PublicKey
-	COSEKey        Bytes
-	Algorithm      int
-	AAGUID         Bytes
-	RPIDHash       Bytes
-	SignCount      uint32
+	// ID is the raw credential ID to store for future assertions.
+	ID Bytes
+	// PublicKey is the parsed standard library public key (*ecdsa.PublicKey,
+	// ed25519.PublicKey, or *rsa.PublicKey).
+	PublicKey crypto.PublicKey
+	// COSEKey is the CBOR-encoded COSE_Key to store for future assertions.
+	COSEKey Bytes
+	// Algorithm is the COSE algorithm identifier (e.g. AlgES256, AlgEdDSA, AlgRS256).
+	Algorithm int
+	// AAGUID is the 16-byte Authenticator Attestation GUID.
+	AAGUID Bytes
+	// RPIDHash is the SHA-256 hash of the Relying Party ID.
+	RPIDHash Bytes
+	// SignCount is the initial signature counter reported by the authenticator.
+	SignCount uint32
+	// BackupEligible reports whether the credential is multi-device (BE flag).
 	BackupEligible bool
-	BackupState    bool
-	UserVerified   bool
-	Transports     []string
-	Attestation    *Attestation
-	ClientData     *ClientData
+	// BackupState reports whether the credential is currently backed up (BS flag).
+	BackupState bool
+	// UserVerified reports whether the user was verified during registration (UV flag).
+	UserVerified bool
+	// Transports lists the authenticator transports reported by the browser.
+	Transports []string
+	// Attestation is the parsed attestationObject.
+	Attestation *Attestation
+	// ClientData is the parsed clientDataJSON.
+	ClientData *ClientData
 }
 
 // VerifyAttestation performs server-side verification of a registration
@@ -665,16 +708,24 @@ type VerifyAssertionOptions struct {
 }
 
 // VerifiedAssertion contains the validated assertion details resulting from a
-// successful authentication ceremony (VerifyAssertion).
+// successful authentication ceremony ([VerifyAssertion]).
 type VerifiedAssertion struct {
-	CredentialID   Bytes
-	UserHandle     Bytes
-	SignCount      uint32
+	// CredentialID is the raw ID of the credential that produced the assertion.
+	CredentialID Bytes
+	// UserHandle is the user handle returned by the authenticator, if any.
+	UserHandle Bytes
+	// SignCount is the updated signature counter to persist for replay/clone detection.
+	SignCount uint32
+	// BackupEligible reports whether the credential is multi-device (BE flag).
 	BackupEligible bool
-	BackupState    bool
-	UserVerified   bool
-	AuthData       AuthenticatorData
-	ClientData     *ClientData
+	// BackupState reports whether the credential is currently backed up (BS flag).
+	BackupState bool
+	// UserVerified reports whether the user was verified during authentication (UV flag).
+	UserVerified bool
+	// AuthData is the parsed authenticatorData.
+	AuthData AuthenticatorData
+	// ClientData is the parsed clientDataJSON.
+	ClientData *ClientData
 }
 
 // VerifyAssertion performs server-side verification of an authentication
@@ -766,10 +817,14 @@ func checkAllowedOrigin(gotOrigin, wantOrigin string, allowedOrigins []string) e
 // Attestation represents a parsed WebAuthn attestationObject.
 // https://w3c.github.io/webauthn/#sctn-attestation
 type Attestation struct {
-	Format      string          `cbor:"fmt"`
-	AttStmt     cbor.RawMessage `cbor:"attStmt"`
-	RawAuthData Bytes           `cbor:"authData"`
+	// Format is the attestation statement format identifier (e.g. "none", "packed", "fido-u2f").
+	Format string `cbor:"fmt"`
+	// AttStmt is the raw CBOR-encoded attestation statement.
+	AttStmt cbor.RawMessage `cbor:"attStmt"`
+	// RawAuthData is the raw authenticatorData bytes.
+	RawAuthData Bytes `cbor:"authData"`
 
+	// AuthData is the parsed authenticatorData.
 	AuthData AuthenticatorData `cbor:"-"`
 }
 
@@ -777,25 +832,39 @@ type Attestation struct {
 // assertion ceremonies.
 // https://w3c.github.io/webauthn/#sctn-authenticator-data
 type AuthenticatorData struct {
-	Flags                  byte                 `json:"flags"`
-	RPIDHash               Bytes                `json:"rpIdHash"`
-	UserPresence           bool                 `json:"up"`
-	BackupEligible         bool                 `json:"be"`
-	BackupState            bool                 `json:"bs"`
-	UserVerification       bool                 `json:"uv"`
-	AttestedCredentialData bool                 `json:"at"`
-	ExtensionData          bool                 `json:"ed"`
-	SignCount              uint32               `json:"signCount"`
-	AttestedCredentials    *AttestedCredentials `json:"attestedCredentialData,omitempty"`
-	Extensions             Bytes                `json:"extensions,omitempty"`
+	// Flags is the raw 1-byte authenticator data flags bitfield.
+	Flags byte `json:"flags"`
+	// RPIDHash is the 32-byte SHA-256 hash of the Relying Party ID.
+	RPIDHash Bytes `json:"rpIdHash"`
+	// UserPresence reports whether the User Present (UP) flag is set.
+	UserPresence bool `json:"up"`
+	// BackupEligible reports whether the Backup Eligibility (BE) flag is set.
+	BackupEligible bool `json:"be"`
+	// BackupState reports whether the Backup State (BS) flag is set.
+	BackupState bool `json:"bs"`
+	// UserVerification reports whether the User Verified (UV) flag is set.
+	UserVerification bool `json:"uv"`
+	// AttestedCredentialData reports whether the AT flag is set.
+	AttestedCredentialData bool `json:"at"`
+	// ExtensionData reports whether the ED flag is set.
+	ExtensionData bool `json:"ed"`
+	// SignCount is the 32-bit signature counter.
+	SignCount uint32 `json:"signCount"`
+	// AttestedCredentials holds the attested credential data when AT is set.
+	AttestedCredentials *AttestedCredentials `json:"attestedCredentialData,omitempty"`
+	// Extensions holds the raw CBOR-encoded extension outputs when ED is set.
+	Extensions Bytes `json:"extensions,omitempty"`
 }
 
 // AttestedCredentials holds the attested credential data from an
-// AuthenticatorData structure.
+// [AuthenticatorData] structure.
 // https://w3c.github.io/webauthn/#sctn-attested-credential-data
 type AttestedCredentials struct {
-	AAGUID  Bytes `json:"AAGUID"`
-	ID      Bytes `json:"credentialId"`
+	// AAGUID is the 16-byte Authenticator Attestation GUID.
+	AAGUID Bytes `json:"AAGUID"`
+	// ID is the raw credential ID.
+	ID Bytes `json:"credentialId"`
+	// COSEKey is the CBOR-encoded COSE_Key public key.
 	COSEKey Bytes `json:"credentialPublicKey"`
 }
 
