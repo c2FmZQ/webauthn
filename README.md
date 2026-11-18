@@ -1,3 +1,6 @@
+[![Tests](https://github.com/c2FmZQ/webauthn/actions/workflows/pr.yml/badge.svg)](https://github.com/c2FmZQ/webauthn/actions/workflows/pr.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/c2FmZQ/webauthn.svg)](https://pkg.go.dev/github.com/c2FmZQ/webauthn)
+
 # webauthn
 
 `github.com/c2FmZQ/webauthn` is a general-purpose W3C WebAuthn library for Go Relying Parties (servers) and WebAssembly clients, along with OpenSSH FIDO2/WebAuthn security key (`sk-ecdsa-sha2-nistp256@openssh.com` and `webauthn-sk-ecdsa-sha2-nistp256@openssh.com`) support in `github.com/c2FmZQ/webauthn/ssh`.
